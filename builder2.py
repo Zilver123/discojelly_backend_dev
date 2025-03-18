@@ -1,7 +1,7 @@
 import service_builder
 from openai import OpenAI
 import json
-from config.py import KEY
+from config import KEY
 
 
 client = OpenAI(api_key=KEY)
