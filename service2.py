@@ -1,7 +1,11 @@
 # Imports
 from openai import OpenAI
 import json
-from config import KEY
+import os
+
+KEY = os.getenv('OPENAI_API_KEY')
+if KEY is None:
+    raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
 class Service:
     def __init__(self, api_key, config):

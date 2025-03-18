@@ -1,7 +1,11 @@
 import service_builder
 from openai import OpenAI
 import json
-from config import KEY
+import os
+
+KEY = os.getenv('OPENAI_API_KEY')
+if KEY is None:
+    raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
 
 client = OpenAI(api_key=KEY)
