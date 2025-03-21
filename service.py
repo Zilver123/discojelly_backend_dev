@@ -2,7 +2,7 @@
 from openai import OpenAI
 import json
 import os
-from image_gen import generate_image
+import tool_replicate
 
 print("Starting...")
 
@@ -21,7 +21,7 @@ class Service:
         if name == "get_weather":
             return "The weather is 32 degrees"
         elif name == "generate_image":
-            return generate_image(args)
+            return tool_replicate.generate("black-forest-labs/flux-1.1-pro", args)
 
     def call_model(self, message):
         if message is not None:
