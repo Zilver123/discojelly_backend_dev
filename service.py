@@ -4,8 +4,6 @@ import json
 import os
 import tool_replicate
 
-print("Starting...")
-
 KEY = os.getenv('OPENAI_API_KEY')
 if KEY is None:
     raise ValueError("OPENAI_API_KEY environment variable is not set.")
@@ -17,10 +15,8 @@ class Service:
         self.model = config["model"]
         self.context = [{"role": "system", "content": config["instructions"]}]
     
-    def call_function(self, name, args):
-        if name == "get_weather":
-            return "The weather is 32 degrees"
-        elif name == "generate_image":
+    def run_tool(self, name, args):
+        if name == "generate_image":
             return tool_replicate.generate("black-forest-labs/flux-1.1-pro", args)
 
     def call_model(self, message):
@@ -34,43 +30,26 @@ class Service:
         )
         return completion
 
+    def call_tools(self, payload):
+        for tool_call in payload.message.tool_calls:
+            name = tool_call.function.name
+            args = json.loads(tool_call.function.arguments)
+            result = self.run_tool(name, args)
+            self.context.append(payload.message)
+            self.context.append({"role": "tool", "tool_call_id": tool_call.id, "content": str(result)})
+
     def main(self, message):
         completion = self.call_model(message)
+        payload = completion.choices[0]
 
-        if completion.choices[0].message.tool_calls is not None:
-            for tool_call in completion.choices[0].message.tool_calls:
-                name = tool_call.function.name
-                args = json.loads(tool_call.function.arguments)
-
-                result = self.call_function(name, args)
-                self.context.append(completion.choices[0].message)
-                self.context.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": str(result)
-                })
+        if payload.message.tool_calls is not None:
+            self.call_tools(payload)
             return self.main(None)
         else:
-            self.context.append(completion.choices[0].message)
-            return completion.choices[0].message.content
+            self.context.append(payload.message)
+            return payload.message.content
 
 tools = [{
-    "type": "function",
-    "function": {
-        "name": "get_weather",
-        "description": "Get current temperature for provided coordinates in celsius.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "latitude": {"type": "number"},
-                "longitude": {"type": "number"}
-            },
-            "required": ["latitude", "longitude"],
-            "additionalProperties": False
-        },
-        "strict": True
-    }
-}, {
     "type": "function",
     "function": {
         "name": "generate_image",
@@ -130,7 +109,7 @@ tools = [{
 
 config = {
     "model": "gpt-4",
-    "instructions": "You are a weather guru",
+    "instructions": "You are a creator tool for content creators. You can generate images, videos, and text.",
     "tools": tools
 }
 
