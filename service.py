@@ -3,6 +3,7 @@ from openai import OpenAI
 import json
 import os
 import tool_replicate
+from tools_config import tools
 
 KEY = os.getenv('OPENAI_API_KEY')
 if KEY is None:
@@ -18,6 +19,10 @@ class Service:
     def run_tool(self, name, args):
         if name == "generate_image":
             return tool_replicate.generate("black-forest-labs/flux-1.1-pro", args)
+        elif name == "generate_music_v2":
+            return tool_replicate.generate("meta/musicgen:671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb", args)
+        elif name == "generate_music":
+            return tool_replicate.generate("minimax/music-01", args)
 
     def call_model(self, message):
         if message is not None:
@@ -48,64 +53,6 @@ class Service:
         else:
             self.context.append(payload.message)
             return payload.message.content
-
-tools = [{
-    "type": "function",
-    "function": {
-        "name": "generate_image",
-        "description": "Generate an image based on text prompt and optional parameters.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "prompt": {
-                    "type": "string",
-                    "description": "Text prompt for image generation"
-                },
-                "seed": {
-                    "type": "integer",
-                    "description": "Random seed. Set for reproducible generation"
-                },
-                "width": {
-                    "type": "integer",
-                    "description": "Width of the generated image in text-to-image mode. Must be between 256 and 1440, multiple of 32."
-                },
-                "height": {
-                    "type": "integer",
-                    "description": "Height of the generated image in text-to-image mode. Must be between 256 and 1440, multiple of 32."
-                },
-                "aspect_ratio": {
-                    "type": "string",
-                    "description": "Aspect ratio for the generated image",
-                    "enum": ["custom", "1:1", "16:9", "3:2", "2:3", "4:5", "5:4", "9:16", "3:4", "4:3"]
-                },
-                "image_prompt": {
-                    "type": "string",
-                    "description": "Image to use with Flux Redux. Must be jpeg, png, gif, or webp."
-                },
-                "output_format": {
-                    "type": "string",
-                    "description": "Format of the output images.",
-                    "enum": ["webp", "jpg", "png"]
-                },
-                "output_quality": {
-                    "type": "integer",
-                    "description": "Quality when saving the output images, from 0 to 100."
-                },
-                "safety_tolerance": {
-                    "type": "integer",
-                    "description": "Safety tolerance, 1 is most strict and 6 is most permissive"
-                },
-                "prompt_upsampling": {
-                    "type": "boolean",
-                    "description": "Automatically modify the prompt for more creative generation"
-                }
-            },
-            "required": ["prompt", "seed", "width", "height", "aspect_ratio", "image_prompt", "output_format", "output_quality", "safety_tolerance", "prompt_upsampling"],
-            "additionalProperties": False
-        },
-        "strict": True
-    }
-}]
 
 config = {
     "model": "gpt-4",
